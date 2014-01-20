@@ -12,7 +12,7 @@ def process_options()
 	options = {}
 	optparse = OptionParser.new do | opts |
 		opts.banner = "Usage: git status-report [-e <email>][-d <days>]\nGenerates a status report for what you worked on for the past n days."
-		opts.on("-a", "--all", "Displays output for all contributers sorted by person") do 
+		opts.on("-a", "--all", "Displays output for all contributers sorted by person") do
 			options[:all] = true
 		end
 		opts.on('-b', '--branches <branch name>', "Limit results to work found in the specified branch(es). \n\t\t\t\t\tMultiple branches can be comma separated") do | branches |
@@ -30,11 +30,11 @@ def process_options()
 		opts.on('-f', '--files', "Display a list of files involved in the commit(s)") do
 			options[:files] = true
 		end
-		opts.on("-h", "--help", "Displays this message") do 
+		opts.on("-h", "--help", "Displays this message") do
 			puts optparse
 			exit 0
 		end
-		opts.on("-r", "--reverse", "Displays output in reverse chronological order") do 
+		opts.on("-r", "--reverse", "Displays output in reverse chronological order") do
 			options[:reverse] = true
 		end
 		opts.on("-s", "--simple", "Simpler output. Doesn't include the dates") do
@@ -142,7 +142,7 @@ def find_git_repos
 			exit 1
 		end
 	end
-	
+
 	if (@git_repos['includes'].length == 0)
 		#nothing specified in the config
 		#maybe the current dir is a git repo
@@ -162,7 +162,7 @@ def find_git_repos
 			#these will look like   .//workspace/htop-osx/.git
 			# and we'll need to merge them with the current dir so that they match up with possible configured exclusions
 			if (raw_repo_paths.length > 0)
-				raw_repo_paths.each do | path | 
+				raw_repo_paths.each do | path |
 					path.sub!(/^\.\//, '')
 					path.sub!(/\.git\/?/, '')
 					absolute_path = pwd + path
@@ -183,7 +183,7 @@ def find_git_repos
 			end
 		end
 	end
-	
+
 	if (@git_repos['includes'].length == 0)
 		puts "Unable to find any git repos to run a report on."
 		puts "Please configure the repos you want to run a report on or run this in a git repo."
@@ -204,7 +204,7 @@ end
 # gets a list of files affected by a commit
 def get_files_in_commit(commit)
 	files = {}
-	commit.diffs.each do | diff | 
+	commit.diffs.each do | diff |
 		files[diff.a_path] = nil unless files.has_key? diff.a_path
 		files[diff.b_path] = nil unless files.has_key? diff.b_path
 		# what about diff.deleted_file and diff.new_file?
@@ -219,7 +219,7 @@ end
 
 @options = process_options()
 @git_repos = find_git_repos() # will exit if it can't find any repos
-							 # has includes and excludes keys, but includes only includes items 
+							 # has includes and excludes keys, but includes only includes items
 							 # that weren't excluded by the exclude rules.
 initialize_grit_repos(@git_repos) #ads grit Repo objects to the @git_repos hash under 'grit' key
 #confirm_saved_changes(@git_repos) # will exit if there are any unsaved changes
@@ -242,20 +242,20 @@ unsaved_changes = false
 @multiple_people = (@options[:all] or @options[:email].length() > 1) ? true : false
 longest_name = @multiple_people ? 0 : nil
 @git_repos['grit'].each do |repo|
-	# find_git_repos will automatically filter anything out of the includes list that 
+	# find_git_repos will automatically filter anything out of the includes list that
 	# needs to be excluded.
-	
+
 	# we want all the commits to all branches since option[:days] days ago
-	
-	
+
+
 	branches = repo.heads() #an array of Grit::Head objects
-	
+
 	branches.each do | branch |
 		if (@options[:branches] and not @options[:branches].include? branch.name)
 			next
 		end
 		branch_commits = repo.commits_since(branch.name, @options[:since] ) #chronological ordering of commits
-		branch_commits.each do | commit | 
+		branch_commits.each do | commit |
 			#puts commit.to_hash().inspect()
 			if ( (@options[:all] or @options[:email].include?(commit.author.email)) and commit.date() >= @options[:since] )
 				# there's currently a bug in grit where commits outside of the specified date range will be returned.
@@ -284,16 +284,16 @@ longest_name = @multiple_people ? 0 : nil
 						author_subjects_by_day[date_string][commit.author.email] = {}
 					end
 				end
-				
+
 				if  ((@multiple_people and not author_subjects_by_day[date_string][commit.author.email][response_hash['subject']]) \
 					or \
 					(not @multiple_people and not author_subjects_by_day[date_string][response_hash['subject']]))
 
-					# using the epoch time of the commit is too unique because it's not 
-					# uncommon to commit on one branch, merge into another branch, and then ammend 
-					# the commit on the merged branch, which gives you the same "work" (as far as the report 
+					# using the epoch time of the commit is too unique because it's not
+					# uncommon to commit on one branch, merge into another branch, and then ammend
+					# the commit on the merged branch, which gives you the same "work" (as far as the report
 					# is concerned) but with 2 different commit times
-					
+
 					# Also, betting on the unlikelyhood of two people commiting at the same second
 					# eventually this will need to be addressed
 					responses_by_day[date_string][commit.date().to_i] = response_hash
@@ -319,12 +319,12 @@ if (response_days.length > 0)
 		response_days.reverse!
 	end
 	response_days.each do | date |
-		
+
 		puts date if not @options[:simple]
 		count = nil
 		if (not @options[:reverse])
 			count = (responses_by_day[date].length > 1) ? 1 : ''
-		else 
+		else
 			count = (responses_by_day[date].length > 1) ? responses_by_day[date].length : ''
 		end
 		epoch_commit_times = responses_by_day[date].keys.sort
@@ -351,7 +351,7 @@ if (response_days.length > 0)
 					commit_hash['message'].split(/\n/).each do | message_line |
 						puts "\t\t#{message_line}"
 					end
-					puts "\t\t[Found in branch \"#{commit_info['branch'].name}\" of repo at #{commit_info['repo'].path}]" 
+					puts "\t\t[Found in branch \"#{commit_info['branch'].name}\" of repo at #{commit_info['repo'].path}]"
 					count = @options[:reverse] ? count -1 : count +1
 				else # just one commit this day
 					if (@options[:all] or @multiple_people)
@@ -360,7 +360,7 @@ if (response_days.length > 0)
 					commit_hash['message'].split(/\n/).each do | message_line |
 						puts "\t#{message_line}"
 					end
-					puts "\t[Found in branch \"#{commit_info['branch'].name}\" of repo at #{commit_info['repo'].path}]" 
+					puts "\t[Found in branch \"#{commit_info['branch'].name}\" of repo at #{commit_info['repo'].path}]"
 				end
 			end
 			if @options[:files]
